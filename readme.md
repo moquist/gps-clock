@@ -70,6 +70,8 @@ AWS_REGION=us-east-2 AWS_PROFILE=default DYNAMO_MODE=true PORT=8888 npm start
 
 ### Deployment Steps
 
+* approve the cert!
+
 ```bash
 S3BUCKET=your-bucket-name ./deploy.sh
 ```
