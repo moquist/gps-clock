@@ -2,6 +2,30 @@
 
 You'll need to set GOOGLE_API_KEY (could put it in env.sh)
 
+bigpickle!
+1. Create Google Cloud Project
+   - Go to Google Cloud Console (https://console.cloud.google.com/)
+   - Create a new project or select existing one
+2. Enable Billing
+   - Google Maps Platform requires billing enabled
+   - New accounts get $200 free credit monthly
+3. Enable Required APIs
+   - Go to APIs & Services > Library (https://console.cloud.google.com/apis/library)
+   - Search and enable:
+     - Maps JavaScript API
+     - Maps JavaScript API (Drawing Library) - though deprecated
+4. Create API Key
+   - Go to APIs & Services > Credentials (https://console.cloud.google.com/apis/credentials)
+   - Click "Create Credentials" > "API Key"
+   - Copy the generated key
+5. Restrict API Key (Recommended)
+   - Edit the API key
+   - Under "Application restrictions", select "HTTP referrers"
+   - Add your domain (e.g., localhost:* for local testing)
+   - Under "API restrictions", select "Restrict key"
+   - Choose "Maps JavaScript API"
+
+
 ## Local test
 
 ```bash
@@ -12,10 +36,7 @@ PORT=8888 npm start
 ### Using curl with basic auth
 
 ```bash
-curl -v -u testuser:hello \
-  -H "Content-Type: application/json" \
-  -d '{"_type":"location","lat":40.7128,"lon":-74.0060}' \
-  http://localhost:8888/pub
+curl -v -u testuser:hello -H "Content-Type: application/json" -d '{"_type":"location","lat":40.7128,"lon":-74.0060}' http://localhost:8888/pub
 ```
 
 ## Interacting with Dynamo

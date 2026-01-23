@@ -3,7 +3,7 @@ set -ex
 
 npm run build:lambda
 S3KEY="lambda-$(date -Iseconds)-$(sha256sum lambda.zip | cut -c1-10).zip"
-op plugin run -- aws s3 cp lambda.zip "s3://$S3BUCKET/$S3KEY"
+aws s3 cp lambda.zip "s3://$S3BUCKET/$S3KEY"
 
 cat > parameters.json <<END
 [
@@ -16,7 +16,7 @@ cat > parameters.json <<END
 ]
 END
 
-op plugin run -- aws cloudformation update-stack \
+aws cloudformation update-stack \
   --stack-name OwnTracksServer \
   --template-body file://cloudformation.yaml \
   --capabilities CAPABILITY_IAM \

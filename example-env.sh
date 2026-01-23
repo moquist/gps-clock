@@ -1,5 +1,5 @@
 export GOOGLE_API_KEY="AI...ck"
-export S3BUCKET=owntracks-deploymentbucket-12341234
+export S3BUCKET=owntracks-deploymentbucket-12341234 # just the bucket name, not the URL
 export DOMAIN_WILDCARD="*.mysite.com"
 export DOMAIN_NAME="locograph.mysite.com"
 export CLOCK_CONFIG=$(jq -cn '
