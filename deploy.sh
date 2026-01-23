@@ -1,44 +1,53 @@
 #!/usr/bin/env bash
 set -ex
 
+# Check required environment variables
+if [ -z "$S3BUCKET" ]; then
+    echo "❌ Error: S3BUCKET environment variable is not set"
+    echo "   Please set it in your environment or in env.sh"
+    exit 1
+fi
+
+if [ -z "$GOOGLE_API_KEY" ]; then
+    echo "❌ Error: GOOGLE_API_KEY environment variable is not set"
+    echo "   Please set it in env.sh"
+    exit 1
+fi
+
+echo "🚀 Starting OwnTracks Server deployment..."
+
 npm run build:lambda
 S3KEY="lambda-$(date -Iseconds)-$(sha256sum lambda.zip | cut -c1-10).zip"
 aws s3 cp lambda.zip "s3://$S3BUCKET/$S3KEY"
 
-cat > parameters.json <<END
-[
-    {"ParameterKey": "GoogleApiKey", "ParameterValue": "$GOOGLE_API_KEY"},
-    {"ParameterKey": "LambdaCodeBucket", "ParameterValue": "$S3BUCKET"},
-    {"ParameterKey": "LambdaCodeKey", "ParameterValue": "$S3KEY"},
-    {"ParameterKey": "DomainWildcard", "ParameterValue": "$DOMAIN_WILDCARD"},
-    {"ParameterKey": "DomainName", "ParameterValue": "$DOMAIN_NAME"},
-    {"ParameterKey": "ClockConfig", "ParameterValue": $(echo "$CLOCK_CONFIG" | jq -R .)}
-]
-END
+# Parameters are now passed directly to cloudformation deploy command
 
-# Check if stack exists
-STACK_STATUS=$(aws cloudformation describe-stacks --stack-name OwnTracksServer --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+# Use cloudformation deploy which handles both create and update automatically
+echo "🚀 Deploying CloudFormation stack..."
+aws cloudformation deploy \
+  --stack-name OwnTracksServer \
+  --template-file cloudformation.yaml \
+  --parameter-overrides \
+    GoogleApiKey="$GOOGLE_API_KEY" \
+    LambdaCodeBucket="$S3BUCKET" \
+    LambdaCodeKey="$S3KEY" \
+    DomainWildcard="$DOMAIN_WILDCARD" \
+    DomainName="$DOMAIN_NAME" \
+    ClockConfig="$(echo "$CLOCK_CONFIG" | jq -c .)" \
+  --capabilities CAPABILITY_IAM \
+  --no-fail-on-empty-changeset
 
-if [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
-    echo "Stack does not exist. Creating new CloudFormation stack..."
-    aws cloudformation create-stack \
-      --stack-name OwnTracksServer \
-      --template-body file://cloudformation.yaml \
-      --capabilities CAPABILITY_IAM \
-      --parameters file://parameters.json \
-      --on-failure DO_NOTHING
-    echo "Waiting for stack creation to complete..."
-    aws cloudformation wait stack-create-complete --stack-name OwnTracksServer
-else
-    echo "Stack exists with status: $STACK_STATUS. Updating CloudFormation stack..."
-    aws cloudformation update-stack \
-      --stack-name OwnTracksServer \
-      --template-body file://cloudformation.yaml \
-      --capabilities CAPABILITY_IAM \
-      --parameters file://parameters.json
-    echo "Waiting for stack update to complete..."
-    aws cloudformation wait stack-update-complete --stack-name OwnTracksServer
-fi
+echo "✅ Stack deployment completed successfully!"
 
-echo "Stack deployment completed successfully!"
+# Display stack outputs
+echo ""
+echo "📋 Stack Outputs:"
 aws cloudformation describe-stacks --stack-name OwnTracksServer --query 'Stacks[0].Outputs' --output table
+
+echo ""
+echo "🎉 OwnTracks Server deployment finished!"
+echo ""
+echo "📝 Next steps:"
+echo "   1. If you configured a custom domain, create a CNAME record pointing to the CustomDomainTarget output"
+echo "   2. Your API endpoint is available at the OwnTracksApiEndpoint output"
+echo "   3. You can now configure your OwnTracks app to use this endpoint"
