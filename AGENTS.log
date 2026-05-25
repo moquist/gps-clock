@@ -1,0 +1,57 @@
+
+Sat Jan 24 23:14:30 EST 2026
+read the readme and src code, ignoring the node_modules directory. I have this cloudformation stack deployed into AWS, and I'm able to make requests like 'curl -v -u so:jomp90staffle -H "Content-Type: application/json" -d '{"_type":"location","lat":21.7128,"lon":-23.0060}' https://www.locograph.majen.net/pub ' successfully. How do I set up my first rectangles ('rects') in order to define locations?
+I'll read the README and source code to understand how to set up rectangles for defining locations.
+→ Read README.md 
+Error: File not found: /home/moquist/projects/gps-clock/README.md
+Did you mean one of these?
+/home/moquist/projects/gps-clock/readme.md
+✱ Glob "src/**/*.js" 
+✱ Glob "*.json" (6 matches)
+→ Read readme.md 
+✱ Glob "src/**/*.ts" (8 matches)
+→ Read data/locations.json 
+→ Read data/users.json 
+→ Read src/server.ts 
+→ Read src/common.ts 
+→ Read src/storage/interfaces.ts 
+✱ Glob "static/**/*" (2 matches)
+→ Read src/storage/dynamodb-storage.ts 
+→ Read static/rects.html 
+Based on my review of the code and documentation, here's how to set up your first rectangles (rects) to define locations:
+Setting Up Rectangles
+Rectangles define geographic areas (like "home", "work", "gym", etc.) that map lat/lon coordinates to named locations. The system uses these to determine where people are when their physical clock hands point to locations.
+Steps:
+1. Access the rectangle editor by navigating to:
+      https://www.locograph.majen.net/rects.html
+      You'll need to authenticate with your credentials (e.g., so:jomp90staffle).
+2. Draw rectangles on the map:
+   - Click the "Draw Rectangle" button
+   - Click and drag on the Google Map to create a rectangle around a location
+   - A prompt will appear asking you to name the rectangle (e.g., "home", "work", "gym")
+   - The rectangle will be editable (you can resize and move it)
+3. Edit existing rectangles:
+   - Double-click any rectangle to rename it
+   - Enter an empty name to delete a rectangle
+   - Drag rectangles to reposition them
+   - Drag the corners/edges to resize them
+4. Save your rectangles:
+   - Click the "Save Rectangles" button when done
+   - You should see a success message
+How Rectangles Work:
+From src/common.ts:63-93, the system:
+- Checks if a user's velocity is > 6 km/h (slow jog) → labels them as "moving"
+- Otherwise, finds all rectangles containing the user's lat/lon coordinates
+- If multiple rectangles overlap, selects the smallest one by area (most specific location)
+- If no rectangle matches → labels as "unknown"
+- Returns the angle for that label from your CLOCK_CONFIG environment variable
+Data Format:
+Rectangles are stored as objects with these properties (src/storage/interfaces.ts:10-16):
+{
+  name: string,    // e.g., "home", "work"
+  north: number,   // northern latitude boundary
+  south: number,   // southern latitude boundary  
+  east: number,    // eastern longitude boundary
+  west: number     // western longitude boundary
+}
+The rectangles are stored in DynamoDB in the OwnTracksLocations table with username='rects' and friend_group='system'.

@@ -80,7 +80,7 @@ S3BUCKET=your-bucket-name ./deploy.sh
 
 ### Parts list
 
-Most of these parts can be substituded with a similar alternative. Amazon links are only provided for convenience, not as strong recommendations.
+Most of these parts can be substituted with a similar alternative. Amazon links are only provided for convenience, not as strong recommendations.
 
 1. one [raspberry pi pico 2 w -- with headers](https://www.adafruit.com/product/6315) ($8) 
 2. one [usb port](https://www.amazon.com/dp/B07X86YFFN) for power ($6)
