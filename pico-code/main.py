@@ -80,6 +80,15 @@ class Stepper:
             self.timer.init(mode=Timer.ONE_SHOT, period=delay_ms, callback=self._update)
 
     def set_target_angle(self, angle, delay=0.0):
+        if angle is None:
+            print(f"{self.name} invalid angle: None")
+            return
+        try:
+            angle = float(angle)
+        except (TypeError, ValueError):
+            print(f"{self.name} invalid angle: {angle!r}")
+            return
+
         self.target_step = int(angle * self.steps_per_revolution / 360) % self.steps_per_revolution
         print(f"{self.name} set target angle {angle}, step {self.target_step}")
         self.speed_sps = 1000 * shortest_direction(self.steps_per_revolution, self.step, self.target_step)
@@ -117,15 +126,34 @@ class LocationFetcher:
             angles = ujson.loads(secrets.fetch_angles().text)
             if self.demo_mode:
                 if random.random() < 0.5:
-                    angles = [int(random.random() * 360) for _ in steppers]
+                    angles = [int(random.random() * 360) for _ in self.steppers]
                 else:
-                    angles = [0, 0, 0, 0, 0]
+                    angles = [0 for _ in self.steppers]
             print("Fetched:", angles)
         finally:
             self.led.value(0)
             self.timer.init(mode=Timer.ONE_SHOT, period=30 * 1000, callback=self._update)
-        for angle, stepper, order in zip(angles, self.steppers, range(5)):
-            stepper.set_target_angle(angle, order * 3.0)
+
+        if not isinstance(angles, (list, tuple)):
+            print("Fetched invalid payload:", angles)
+            return
+
+        n = len(self.steppers)
+        if len(angles) < n:
+            angles = list(angles) + [None] * (n - len(angles))
+        elif len(angles) > n:
+            angles = angles[:n]
+
+        for i, stepper in enumerate(self.steppers):
+            angle = angles[i]
+            if angle is None:
+                angle = secrets.FALLBACK_ANGLE_DEG
+            elif not isinstance(angle, (int, float)):
+                print(f"{stepper.name} invalid fetched angle: {angle!r}")
+                angle = secrets.FALLBACK_ANGLE_DEG
+
+            angle = float(angle) % 360.0
+            stepper.set_target_angle(angle, i * 3.0)
 
 LED = Pin(secrets.LED_PIN, Pin.OUT)
 LAST = 0
